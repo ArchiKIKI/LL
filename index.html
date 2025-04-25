@@ -1,0 +1,181 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Кофейня от Марата | Заказ кофе</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Open+Sans:wght@300;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Open Sans', sans-serif;
+      background: #f4f1ee url('https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=1600&q=80') no-repeat center center fixed;
+      background-size: cover;
+      color: #3e2e1c;
+    }
+
+    .overlay {
+      background-color: rgba(255, 255, 255, 0.95);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    h1 {
+      font-family: 'Great Vibes', cursive;
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .form {
+      margin-bottom: 20px;
+    }
+
+    input {
+      padding: 10px;
+      margin: 5px;
+      font-size: 16px;
+    }
+
+    .button, select {
+      background-color: #8b5e3c;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 5px;
+    }
+
+    .orders {
+      margin-top: 30px;
+      max-width: 500px;
+      width: 100%;
+      background: #fff8f0;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .order {
+      border-bottom: 1px solid #ccc;
+      padding: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay">
+    <h1>Кофейня от Марата</h1>
+
+    <div id="auth">
+      <div class="form">
+        <input type="text" id="login" placeholder="Логин">
+        <input type="password" id="password" placeholder="Пароль">
+        <button class="button" onclick="register()">Регистрация</button>
+        <button class="button" onclick="loginUser()">Войти</button>
+      </div>
+    </div>
+
+    <div id="main" class="hidden">
+      <p>Добро пожаловать, <span id="user"></span>! Выберите кофе и объем, чтобы сделать заказ.</p>
+      <select id="coffee">
+        <option disabled selected>Выберите кофе</option>
+        <option>Латте</option>
+        <option>Латте с мёдом</option>
+        <option>Капучино</option>
+        <option>Капучино Стронг</option>
+        <option>Американо</option>
+        <option>Экспрессо</option>
+      </select>
+      <select id="size">
+        <option disabled selected>Выберите объем</option>
+        <option>200 мл</option>
+        <option>300 мл</option>
+        <option>400 мл</option>
+      </select>
+      <button class="button" onclick="orderCoffee()">Заказать</button>
+
+      <div class="orders">
+        <h3>Мои заказы</h3>
+        <div id="orderList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const auth = document.getElementById('auth');
+    const main = document.getElementById('main');
+    const userSpan = document.getElementById('user');
+    const orderList = document.getElementById('orderList');
+
+    function register() {
+      const login = document.getElementById('login').value;
+      const password = document.getElementById('password').value;
+      if (!login || !password) return alert('Введите логин и пароль');
+      localStorage.setItem('user_' + login, password);
+      alert('Регистрация прошла успешно!');
+    }
+
+    function loginUser() {
+      const login = document.getElementById('login').value;
+      const password = document.getElementById('password').value;
+      if (localStorage.getItem('user_' + login) === password) {
+        localStorage.setItem('currentUser', login);
+        auth.classList.add('hidden');
+        main.classList.remove('hidden');
+        userSpan.textContent = login;
+        loadOrders();
+      } else {
+        alert('Неверный логин или пароль');
+      }
+    }
+
+    function orderCoffee() {
+      const coffee = document.getElementById('coffee').value;
+      const size = document.getElementById('size').value;
+      const user = localStorage.getItem('currentUser');
+      if (!coffee || !size) return alert('Выберите кофе и объем');
+      const orders = JSON.parse(localStorage.getItem('orders_' + user) || '[]');
+      const id = Date.now();
+      orders.push({ id, coffee, size, status: 'Готовится', created: Date.now() });
+      localStorage.setItem('orders_' + user, JSON.stringify(orders));
+      loadOrders();
+      setTimeout(() => {
+        updateStatus(user, id);
+      }, 300000); // 5 минут
+    }
+
+    function loadOrders() {
+      const user = localStorage.getItem('currentUser');
+      const orders = JSON.parse(localStorage.getItem('orders_' + user) || '[]');
+      orderList.innerHTML = '';
+      orders.forEach(order => {
+        const div = document.createElement('div');
+        div.className = 'order';
+        div.innerHTML = `Заказ #${order.id}<br>${order.coffee}, ${order.size}<br>Статус: <strong>${order.status}</strong>`;
+        orderList.appendChild(div);
+      });
+    }
+
+    function updateStatus(user, id) {
+      const orders = JSON.parse(localStorage.getItem('orders_' + user) || '[]');
+      const updated = orders.map(order => {
+        if (order.id === id) order.status = 'Готов';
+        return order;
+      });
+      localStorage.setItem('orders_' + user, JSON.stringify(updated));
+      loadOrders();
+    }
+  </script>
+</body>
+</html>
